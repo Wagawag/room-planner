@@ -25,6 +25,9 @@ h1 { margin:0 0 6px; font-size:22px; }
 .furniture .label { background:rgba(255,255,255,.95); padding:3px 6px; border-radius:4px; font-size:11px; margin-top:3px; display:inline-block; }
 .dimensions { position:absolute; top:12px; left:12px; background:rgba(255,255,255,.9); padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; z-index:3; }
 .warning { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#ff4444; color:#fff; padding:12px 20px; border-radius:8px; display:none; z-index:10; }
+.view3d-btn { display:block; width:100%; background:#0066cc; color:#fff; border:none; padding:14px; border-radius:10px; font-size:16px; font-weight:700; margin-top:10px; cursor:pointer; }
+#view3d { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:100; }
+.close3d { position:absolute; top:16px; right:16px; background:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; z-index:101; }
 </style>
 </head>
 <body>
@@ -73,8 +76,16 @@ h1 { margin:0 0 6px; font-size:22px; }
     <div class="dimensions" id="dimLabel">חדר: 4×5×2.6 מטר</div>
     <div class="warning" id="warning">הרהיט לא נכנס לחדר!</div>
   </div>
+
+  <button class="view3d-btn" onclick="open3D()">צפה בתלת-מימד</button>
 </div>
 
+<div id="view3d">
+  <button class="close3d" onclick="close3D()">סגור</button>
+  <canvas id="canvas3d"></canvas>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 const room = document.getElementById('room');
 const widthInput = document.getElementById('width');
@@ -82,6 +93,7 @@ const lengthInput = document.getElementById('length');
 const heightInput = document.getElementById('height');
 const dimLabel = document.getElementById('dimLabel');
 const warning = document.getElementById('warning');
+const view3dDiv = document.getElementById('view3d');
 
 function updateDimensions() {
   dimLabel.textContent = `חדר: ${widthInput.value}×${lengthInput.value}×${heightInput.value} מטר`;
@@ -108,7 +120,6 @@ function addFurniture(name, w, d, h, imgSrc) {
     <div class="label">${name}<br>${(w*100).toFixed(0)}×${(d*100).toFixed(0)}×${(h*100).toFixed(0)} ס"מ</div>
   `;
 
-  // Make movable
   let isDragging = false, offsetX, offsetY;
 
   function startDrag(e) {
@@ -128,7 +139,6 @@ function addFurniture(name, w, d, h, imgSrc) {
     const roomRect = room.getBoundingClientRect();
     let newLeft = clientX - roomRect.left - offsetX;
     let newTop = clientY - roomRect.top - offsetY;
-    // Keep inside room
     newLeft = Math.max(0, Math.min(newLeft, roomRect.width - 100));
     newTop = Math.max(0, Math.min(newTop, roomRect.height - 100));
     furniture.style.left = newLeft + 'px';
@@ -149,6 +159,73 @@ function addFurniture(name, w, d, h, imgSrc) {
 
   room.appendChild(furniture);
   room.scrollIntoView({behavior:'smooth', block:'center'});
+}
+
+function open3D() {
+  view3dDiv.style.display = 'block';
+  init3D();
+}
+
+function close3D() {
+  view3dDiv.style.display = 'none';
+}
+
+function init3D() {
+  const canvas = document.getElementById('canvas3d');
+  const renderer = new THREE.WebGLRenderer({canvas, antialias:true});
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x333333);
+
+  const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.1, 100);
+  camera.position.set(5, 4, 5);
+  camera.lookAt(0, 0, 0);
+
+  const light = new THREE.DirectionalLight(0xffffff, 1);
+  light.position.set(5, 10, 5);
+  scene.add(light);
+  scene.add(new THREE.AmbientLight(0x666666));
+
+  const roomW = parseFloat(widthInput.value);
+  const roomL = parseFloat(lengthInput.value);
+  const roomH = parseFloat(heightInput.value);
+
+  // Floor
+  const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(roomW, roomL),
+    new THREE.MeshStandardMaterial({color: 0xdddddd})
+  );
+  floor.rotation.x = -Math.PI / 2;
+  scene.add(floor);
+
+  // Walls
+  const wallMat = new THREE.MeshStandardMaterial({color: 0xf5f0eb, side: THREE.DoubleSide});
+  const wall1 = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
+  wall1.position.set(0, roomH/2, -roomL/2);
+  scene.add(wall1);
+
+  const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(roomL, roomH), wallMat);
+  wall2.position.set(-roomW/2, roomH/2, 0);
+  wall2.rotation.y = Math.PI / 2;
+  scene.add(wall2);
+
+  // Furniture as simple boxes
+  const furnitures = document.querySelectorAll('.furniture');
+  furnitures.forEach((el, i) => {
+    const box = new THREE.Mesh(
+      new THREE.BoxGeometry(0.8, 0.5, 0.6),
+      new THREE.MeshStandardMaterial({color: 0x00b67a})
+    );
+    box.position.set((i % 3) * 1.2 - 1, 0.25, Math.floor(i / 3) * 1.2 - 1);
+    scene.add(box);
+  });
+
+  function animate() {
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+  animate();
 }
 </script>
 </body>
