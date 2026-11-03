@@ -14,8 +14,9 @@ h1 { margin:0 0 6px; font-size:22px; }
 .room-container { display:flex; flex-direction:column; gap:16px; padding:16px; max-width:600px; margin:0 auto; }
 .catalog { background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
 .catalog-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-.item { background:#f8f9fa; border-radius:10px; padding:10px; text-align:center; cursor:pointer; }
-.item img { width:100%; height:90px; object-fit:cover; border-radius:8px; }
+.item { background:#f8f9fa; border-radius:10px; padding:10px; text-align:center; cursor:pointer; user-select:none; -webkit-tap-highlight-color:transparent; }
+.item:active { background:#e0e0e0; }
+.item img { width:100%; height:90px; object-fit:cover; border-radius:8px; pointer-events:none; }
 .item p { margin:6px 0 2px; font-size:14px; font-weight:600; }
 .item small { color:#666; font-size:12px; }
 .room { background:#eaeaea url('https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=1200&h=800&fit=crop') center/cover; border-radius:12px; min-height:420px; position:relative; box-shadow:0 2px 12px rgba(0,0,0,.1); }
@@ -25,9 +26,6 @@ h1 { margin:0 0 6px; font-size:22px; }
 .dimensions { position:absolute; top:12px; left:12px; background:rgba(255,255,255,.9); padding:8px 14px; border-radius:8px; font-size:14px; font-weight:600; }
 .warning { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#ff4444; color:#fff; padding:12px 20px; border-radius:8px; display:none; z-index:10; }
 .view3d-btn { display:block; width:100%; background:#0066cc; color:#fff; border:none; padding:14px; border-radius:10px; font-size:16px; font-weight:700; margin-top:10px; cursor:pointer; }
-#view3d { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#111; z-index:100; }
-#view3d canvas { width:100%; height:100%; }
-.close3d { position:absolute; top:16px; right:16px; background:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; z-index:101; }
 </style>
 </head>
 <body>
@@ -55,4 +53,72 @@ h1 { margin:0 0 6px; font-size:22px; }
         <p>שולחן קפה</p>
         <small>100×60×40</small>
       </div>
-      <div class="item" data-name="כיסא" data-w="0.5" data-d="0.5" data-h="0.9" data-link="https://
+      <div class="item" data-name="כיסא" data-w="0.5" data-d="0.5" data-h="0.9" data-link="https://example.com/chair">
+        <img src="https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=300&h=200&fit=crop" alt="כיסא">
+        <p>כיסא</p>
+        <small>50×50×90</small>
+      </div>
+      <div class="item" data-name="מדף" data-w="1.2" data-d="0.3" data-h="0.4" data-link="https://example.com/shelf">
+        <img src="https://images.unsplash.com/photo-1594620302200-9a762244a156?w=300&h=200&fit=crop" alt="מדף">
+        <p>מדף</p>
+        <small>120×30×40</small>
+      </div>
+    </div>
+  </div>
+
+  <div class="room" id="room">
+    <div class="dimensions" id="dimLabel">חדר: 4×5×2.6 מטר</div>
+    <div class="warning" id="warning">הרהיט לא נכנס לחדר!</div>
+  </div>
+
+  <button class="view3d-btn" onclick="alert('תלת-מימד יתווסף בהמשך')">צפה בתלת-מימד</button>
+</div>
+
+<script>
+const room = document.getElementById('room');
+const widthInput = document.getElementById('width');
+const lengthInput = document.getElementById('length');
+const heightInput = document.getElementById('height');
+const dimLabel = document.getElementById('dimLabel');
+const warning = document.getElementById('warning');
+
+function updateDimensions() {
+  dimLabel.textContent = `חדר: ${widthInput.value}×${lengthInput.value}×${heightInput.value} מטר`;
+}
+[widthInput, lengthInput, heightInput].forEach(el => el.addEventListener('input', updateDimensions));
+
+document.querySelectorAll('.item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const roomW = parseFloat(widthInput.value);
+    const roomL = parseFloat(lengthInput.value);
+    const roomH = parseFloat(heightInput.value);
+
+    const itemW = parseFloat(this.dataset.w);
+    const itemD = parseFloat(this.dataset.d);
+    const itemH = parseFloat(this.dataset.h);
+
+    if (itemW > roomW || itemD > roomL || itemH > roomH) {
+      warning.style.display = 'block';
+      setTimeout(() => warning.style.display = 'none', 2000);
+      return;
+    }
+
+    const name = this.dataset.name;
+    const link = this.dataset.link;
+    const imgSrc = this.querySelector('img').src;
+
+    const furniture = document.createElement('div');
+    furniture.className = 'furniture';
+    furniture.style.left = '40px';
+    furniture.style.top = '100px';
+    furniture.innerHTML = `
+      <img src="${imgSrc}">
+      <div class="label">${name}<br>${(itemW*100).toFixed(0)}×${(itemD*100).toFixed(0)}×${(itemH*100).toFixed(0)} ס"מ</div>
+    `;
+
+    room.appendChild(furniture);
+
+    // Scroll to room so user
