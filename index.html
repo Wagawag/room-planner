@@ -52,4 +52,104 @@ h1 { margin:0 0 6px; font-size:22px; }
         <img src="https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300&h=200&fit=crop" alt="שולחן">
         <p>שולחן קפה</p>
         <small>100×60×40 ס"מ</small>
-        <button class="add-btn" onclick="addFurniture('שולחן קפה', 1.0, 0.6, 0.4, 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300&h=200&fit=crop')">הוסף לחדר</button
+        <button class="add-btn" onclick="addFurniture('שולחן קפה', 1.0, 0.6, 0.4, 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300&h=200&fit=crop')">הוסף לחדר</button>
+      </div>
+      <div class="item">
+        <img src="https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=300&h=200&fit=crop" alt="כיסא">
+        <p>כיסא</p>
+        <small>50×50×90 ס"מ</small>
+        <button class="add-btn" onclick="addFurniture('כיסא', 0.5, 0.5, 0.9, 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=300&h=200&fit=crop')">הוסף לחדר</button>
+      </div>
+      <div class="item">
+        <img src="https://images.unsplash.com/photo-1594620302200-9a762244a156?w=300&h=200&fit=crop" alt="מדף">
+        <p>מדף</p>
+        <small>120×30×40 ס"מ</small>
+        <button class="add-btn" onclick="addFurniture('מדף', 1.2, 0.3, 0.4, 'https://images.unsplash.com/photo-1594620302200-9a762244a156?w=300&h=200&fit=crop')">הוסף לחדר</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="room" id="room">
+    <div class="dimensions" id="dimLabel">חדר: 4×5×2.6 מטר</div>
+    <div class="warning" id="warning">הרהיט לא נכנס לחדר!</div>
+  </div>
+</div>
+
+<script>
+const room = document.getElementById('room');
+const widthInput = document.getElementById('width');
+const lengthInput = document.getElementById('length');
+const heightInput = document.getElementById('height');
+const dimLabel = document.getElementById('dimLabel');
+const warning = document.getElementById('warning');
+
+function updateDimensions() {
+  dimLabel.textContent = `חדר: ${widthInput.value}×${lengthInput.value}×${heightInput.value} מטר`;
+}
+[widthInput, lengthInput, heightInput].forEach(el => el.addEventListener('input', updateDimensions));
+
+function addFurniture(name, w, d, h, imgSrc) {
+  const roomW = parseFloat(widthInput.value);
+  const roomL = parseFloat(lengthInput.value);
+  const roomH = parseFloat(heightInput.value);
+
+  if (w > roomW || d > roomL || h > roomH) {
+    warning.style.display = 'block';
+    setTimeout(() => warning.style.display = 'none', 2000);
+    return;
+  }
+
+  const furniture = document.createElement('div');
+  furniture.className = 'furniture';
+  furniture.style.left = '50px';
+  furniture.style.top = '120px';
+  furniture.innerHTML = `
+    <img src="${imgSrc}">
+    <div class="label">${name}<br>${(w*100).toFixed(0)}×${(d*100).toFixed(0)}×${(h*100).toFixed(0)} ס"מ</div>
+  `;
+
+  // Make movable
+  let isDragging = false, offsetX, offsetY;
+
+  function startDrag(e) {
+    isDragging = true;
+    const rect = furniture.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
+    e.preventDefault();
+  }
+
+  function drag(e) {
+    if (!isDragging) return;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const roomRect = room.getBoundingClientRect();
+    let newLeft = clientX - roomRect.left - offsetX;
+    let newTop = clientY - roomRect.top - offsetY;
+    // Keep inside room
+    newLeft = Math.max(0, Math.min(newLeft, roomRect.width - 100));
+    newTop = Math.max(0, Math.min(newTop, roomRect.height - 100));
+    furniture.style.left = newLeft + 'px';
+    furniture.style.top = newTop + 'px';
+    e.preventDefault();
+  }
+
+  function stopDrag() {
+    isDragging = false;
+  }
+
+  furniture.addEventListener('mousedown', startDrag);
+  furniture.addEventListener('touchstart', startDrag, {passive: false});
+  document.addEventListener('mousemove', drag);
+  document.addEventListener('touchmove', drag, {passive: false});
+  document.addEventListener('mouseup', stopDrag);
+  document.addEventListener('touchend', stopDrag);
+
+  room.appendChild(furniture);
+  room.scrollIntoView({behavior:'smooth', block:'center'});
+}
+</script>
+</body>
+</html>
