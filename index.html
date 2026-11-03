@@ -28,6 +28,7 @@ h1 { margin:0 0 6px; font-size:22px; }
 .view3d-btn { display:block; width:100%; background:#0066cc; color:#fff; border:none; padding:14px; border-radius:10px; font-size:16px; font-weight:700; margin-top:10px; cursor:pointer; }
 #view3d { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#1a1a1a; z-index:100; }
 .close3d { position:absolute; top:16px; right:16px; background:#fff; border:none; padding:10px 16px; border-radius:8px; font-weight:700; cursor:pointer; z-index:101; }
+.hint { position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:#fff; font-size:14px; background:rgba(0,0,0,.5); padding:8px 16px; border-radius:20px; }
 </style>
 </head>
 <body>
@@ -49,25 +50,25 @@ h1 { margin:0 0 6px; font-size:22px; }
         <img src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&h=200&fit=crop" alt="ספה">
         <p>ספה</p>
         <small>220×90×85 ס"מ</small>
-        <button class="add-btn" onclick="addFurniture('ספה', 2.2, 0.9, 0.85, 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=300&h=200&fit=crop')">הוסף לחדר</button>
+        <button class="add-btn" onclick="addFurniture('ספה', 2.2, 0.9, 0.85, 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=400&h=300&fit=crop')">הוסף לחדר</button>
       </div>
       <div class="item">
         <img src="https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300&h=200&fit=crop" alt="שולחן">
         <p>שולחן קפה</p>
         <small>100×60×40 ס"מ</small>
-        <button class="add-btn" onclick="addFurniture('שולחן קפה', 1.0, 0.6, 0.4, 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=300&h=200&fit=crop')">הוסף לחדר</button>
+        <button class="add-btn" onclick="addFurniture('שולחן קפה', 1.0, 0.6, 0.4, 'https://images.unsplash.com/photo-1533090481720-856c6e3c1fdc?w=400&h=300&fit=crop')">הוסף לחדר</button>
       </div>
       <div class="item">
         <img src="https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=300&h=200&fit=crop" alt="כיסא">
         <p>כיסא</p>
         <small>50×50×90 ס"מ</small>
-        <button class="add-btn" onclick="addFurniture('כיסא', 0.5, 0.5, 0.9, 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=300&h=200&fit=crop')">הוסף לחדר</button>
+        <button class="add-btn" onclick="addFurniture('כיסא', 0.5, 0.5, 0.9, 'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=400&h=300&fit=crop')">הוסף לחדר</button>
       </div>
       <div class="item">
         <img src="https://images.unsplash.com/photo-1594620302200-9a762244a156?w=300&h=200&fit=crop" alt="מדף">
         <p>מדף</p>
         <small>120×30×40 ס"מ</small>
-        <button class="add-btn" onclick="addFurniture('מדף', 1.2, 0.3, 0.4, 'https://images.unsplash.com/photo-1594620302200-9a762244a156?w=300&h=200&fit=crop')">הוסף לחדר</button>
+        <button class="add-btn" onclick="addFurniture('מדף', 1.2, 0.3, 0.4, 'https://images.unsplash.com/photo-1594620302200-9a762244a156?w=400&h=300&fit=crop')">הוסף לחדר</button>
       </div>
     </div>
   </div>
@@ -83,6 +84,7 @@ h1 { margin:0 0 6px; font-size:22px; }
 <div id="view3d">
   <button class="close3d" onclick="close3D()">סגור</button>
   <canvas id="canvas3d"></canvas>
+  <div class="hint">גרור כדי לסובב</div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -113,6 +115,7 @@ function addFurniture(name, w, d, h, imgSrc) {
 
   const furniture = document.createElement('div');
   furniture.className = 'furniture';
+  furniture.dataset.img = imgSrc;
   furniture.style.left = '50px';
   furniture.style.top = '120px';
   furniture.innerHTML = `
@@ -161,7 +164,7 @@ function addFurniture(name, w, d, h, imgSrc) {
   room.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
-let renderer, scene, camera;
+let renderer, scene, camera, isRotating = false, prevX = 0;
 
 function open3D() {
   view3dDiv.style.display = 'block';
@@ -187,13 +190,12 @@ function init3D() {
   const roomH = parseFloat(heightInput.value);
 
   camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 100);
-  camera.position.set(roomW * 0.8, roomH * 1.2, roomL * 0.8);
+  camera.position.set(roomW * 0.7, roomH * 1.1, roomL * 0.7);
   camera.lookAt(0, roomH * 0.3, 0);
 
   // Lights
-  const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-  scene.add(ambient);
-  const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+  scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+  const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
   dirLight.position.set(5, 10, 5);
   scene.add(dirLight);
 
@@ -207,34 +209,52 @@ function init3D() {
 
   // Walls
   const wallMat = new THREE.MeshStandardMaterial({color: 0xf5f0eb, side: THREE.DoubleSide});
-  
   const wallBack = new THREE.Mesh(new THREE.PlaneGeometry(roomW, roomH), wallMat);
   wallBack.position.set(0, roomH/2, -roomL/2);
   scene.add(wallBack);
-
   const wallLeft = new THREE.Mesh(new THREE.PlaneGeometry(roomL, roomH), wallMat);
   wallLeft.position.set(-roomW/2, roomH/2, 0);
   wallLeft.rotation.y = Math.PI / 2;
   scene.add(wallLeft);
 
-  const wallRight = new THREE.Mesh(new THREE.PlaneGeometry(roomL, roomH), wallMat);
-  wallRight.position.set(roomW/2, roomH/2, 0);
-  wallRight.rotation.y = Math.PI / 2;
-  scene.add(wallRight);
-
-  // Furniture as colored boxes based on count
-  const colors = [0x00b67a, 0x4a90d9, 0xe67e22, 0x9b59b6];
+  // Furniture as textured planes
+  const loader = new THREE.TextureLoader();
   const furnitures = document.querySelectorAll('.furniture');
   furnitures.forEach((el, i) => {
-    const box = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 0.5, 0.7),
-      new THREE.MeshStandardMaterial({color: colors[i % colors.length]})
-    );
-    const x = ((i % 3) - 1) * 1.3;
-    const z = (Math.floor(i / 3) - 0.5) * 1.5;
-    box.position.set(x, 0.25, z);
-    scene.add(box);
+    const imgSrc = el.dataset.img;
+    loader.load(imgSrc, (texture) => {
+      const plane = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.2, 0.9),
+        new THREE.MeshBasicMaterial({map: texture, transparent: true})
+      );
+      const x = ((i % 3) - 1) * 1.4;
+      const z = (Math.floor(i / 3) - 0.5) * 1.6;
+      plane.position.set(x, 0.45, z);
+      scene.add(plane);
+    });
   });
+
+  // Rotation controls
+  canvas.addEventListener('mousedown', (e) => { isRotating = true; prevX = e.clientX; });
+  canvas.addEventListener('touchstart', (e) => { isRotating = true; prevX = e.touches[0].clientX; }, {passive:true});
+  canvas.addEventListener('mousemove', (e) => {
+    if (!isRotating) return;
+    const delta = (e.clientX - prevX) * 0.01;
+    camera.position.x = Math.cos(delta) * camera.position.x - Math.sin(delta) * camera.position.z;
+    camera.position.z = Math.sin(delta) * camera.position.x + Math.cos(delta) * camera.position.z;
+    camera.lookAt(0, roomH * 0.3, 0);
+    prevX = e.clientX;
+  });
+  canvas.addEventListener('touchmove', (e) => {
+    if (!isRotating) return;
+    const delta = (e.touches[0].clientX - prevX) * 0.01;
+    camera.position.x = Math.cos(delta) * camera.position.x - Math.sin(delta) * camera.position.z;
+    camera.position.z = Math.sin(delta) * camera.position.x + Math.cos(delta) * camera.position.z;
+    camera.lookAt(0, roomH * 0.3, 0);
+    prevX = e.touches[0].clientX;
+  }, {passive:true});
+  canvas.addEventListener('mouseup', () => isRotating = false);
+  canvas.addEventListener('touchend', () => isRotating = false);
 
   function animate() {
     requestAnimationFrame(animate);
